@@ -2,6 +2,7 @@ from os import system, get_terminal_size, name as os_name
 from sys import stdout
 from msvcrt import getwch  # , kbhit
 from time import sleep
+from json import load, dump
 # from RPi import GPIO
 
 system("")  # make ANSI escape sequence get processed on windows
@@ -52,7 +53,9 @@ MAX_TIME_VALUE = 999.99
 MIN_TIME_VALUE = 0
 TIME_VALUE_DIGITS = 4
 
-TITLE = "Coilgun"
+PROFILE_POSTFIX = ".cgp"
+
+title = "Coilgun"
 
 content_x_start = 0
 content_y_start = 0
@@ -149,11 +152,11 @@ def draw_titlebar():
     set_cursor_pos(0, 0)
     set_mode("negative")
 
-    padding = (tty_width - len(TITLE)) / 2
+    padding = (tty_width - len(title)) / 2
     padding_left = int(padding)
     padding_rigth = padding_left if padding_left == padding else padding_left + 1
 
-    p(f"{' ' * padding_left}{TITLE}{' ' * padding_rigth}")
+    p(f"{' ' * padding_left}{title}{' ' * padding_rigth}")
 
     set_mode("normal")
 
@@ -318,8 +321,76 @@ def bound_time(time):
 
 
 def run_command():
-    if command == "q" or command == "quit":
+    global time_values, title, command
+
+    if command in ("q", "quit"):
         exit()
+    elif command in ("f", "fire"):
+        fire()
+    elif command.startswith(("lp ", "load-profile ")):
+
+        name = " ".join(command.split(" ")[1:])
+
+        try:
+            with open(name + PROFILE_POSTFIX) as f:
+                time_values = load(f)
+                title = name
+
+            draw_screen()
+        except OSError as e:
+            return str(e)
+
+    elif command.startswith(("sp", "save-profile")):
+        name = " ".join(command.split(" ")[1:])
+
+        if name:
+            title = name
+            draw_titlebar()
+        else:
+            name = title
+
+        try:
+            with open(name + PROFILE_POSTFIX, "w") as f:
+                dump(time_values, f)
+        except OSError as e:
+            return str(e)
+
+    elif command.replace(".", "", 1).isdecimal():
+        time_values[control_arrows_pos_value] = bound_time(float(command))
+
+        draw_value(control_arrows_pos_value)
+
+    elif command.startswith(("sat ", "set-all-times ")):
+        val = command.split(" ")[1]
+
+        if val.replace(".", "", 1).isdecimal():
+            val = bound_time(float(val))
+
+            for i in range(0, COIL_NUM * 2 - 1, 2):
+                time_values[i] = val
+
+                draw_value(i)
+        else:
+            return "Error - not a number"
+
+    elif command.startswith(("sad ", "set-all-delays ")):
+        val = command.split(" ")[1]
+
+        if val.replace(".", "", 1).isdecimal():
+            val = bound_time(float(val))
+
+            for i in range(1, COIL_NUM * 2 - 1, 2):
+                time_values[i] = val
+
+                draw_value(i)
+        else:
+            return "Error - not a number"
+
+    elif command in ("r", "redraw"):
+        draw_screen()
+
+    else:
+        return "Error - unknown command"
 
 
 set_cursor_visible(False)
@@ -348,6 +419,7 @@ while True:
                     command_bar_cursor_pos = len(command)
 
                 draw_command_bar()
+
             elif key == KEY_RIGHT:
                 command_bar_cursor_pos -= 1
 
@@ -355,23 +427,28 @@ while True:
                     command_bar_cursor_pos = 0
 
                 draw_command_bar()
+
             elif key == KEY_POS1:
                 command_bar_cursor_pos = len(command)
                 draw_command_bar()
+
             elif key == KEY_END:
                 command_bar_cursor_pos = 0
                 draw_command_bar()
+
         else:
             if key == KEY_UP:
                 time_values[control_arrows_pos_value] += 10**(-control_arrows_pos_digit + 2)
                 time_values[control_arrows_pos_value] = bound_time(time_values[control_arrows_pos_value])
 
                 draw_value(control_arrows_pos_value)
+
             elif key == KEY_DOWN:
                 time_values[control_arrows_pos_value] -= 10**(-control_arrows_pos_digit + 2)
                 time_values[control_arrows_pos_value] = bound_time(time_values[control_arrows_pos_value])
 
                 draw_value(control_arrows_pos_value)
+
             elif key == KEY_LEFT:
                 draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, False)
 
@@ -385,6 +462,7 @@ while True:
                     control_arrows_pos_digit -= 1
 
                 draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, True)
+
             elif key == KEY_RIGHT:
                 draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, False)
 
@@ -398,6 +476,7 @@ while True:
                     control_arrows_pos_digit += 1
 
                 draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, True)
+
             elif key == KEY_CTRL_UP:
                 val = 10**(-control_arrows_pos_digit + 2)
 
@@ -406,6 +485,7 @@ while True:
                     time_values[i] = bound_time(time_values[i])
 
                     draw_value(i)
+
             elif key == KEY_CTRL_DOWN:
                 val = 10**(-control_arrows_pos_digit + 2)
 
@@ -414,6 +494,7 @@ while True:
                     time_values[i] = bound_time(time_values[i])
 
                     draw_value(i)
+
             elif key == KEY_CTRL_LEFT:
                 draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, False)
 
@@ -423,6 +504,7 @@ while True:
                     control_arrows_pos_value -= 1
 
                 draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, True)
+
             elif key == KEY_CTRL_RIGHT:
                 draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, False)
 
@@ -432,6 +514,7 @@ while True:
                     control_arrows_pos_value += 1
 
                 draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, True)
+
             # else:
             #     print("special: ", bytes(key, "unicode_escape"))
 
@@ -441,32 +524,46 @@ while True:
                 command_bar_active = False
                 command = ""
                 draw_command_bar()
+
             elif key == KEY_BACKSPACE:
                 if command_bar_cursor_pos == 0:
                     command = command[:-1]
                 else:
                     command = command[:-(command_bar_cursor_pos + 1)] + command[-command_bar_cursor_pos:]
-                draw_command_bar()
-            elif key == KEY_ENTER:
-                run_command()
 
-                command = ""
+                draw_command_bar()
+
+            elif key == KEY_ENTER:
+                command = run_command()
+
+                if not command:
+                    command = ""
+                else:
+                    command = " " + command
+
                 command_bar_active = False
                 draw_command_bar()
+                command = ""
+
             else:
                 if command_bar_cursor_pos == 0:
                     command += key
                 else:
                     command = command[:-command_bar_cursor_pos] + key + command[-command_bar_cursor_pos:]
+
                 draw_command_bar()
+
         else:
             if key == "q" or key == KEY_CTRL_C:
                 break
+
             elif key == "f":
                 fire()
+
             elif key == ":":
                 command_bar_active = True
                 draw_command_bar()
+
             # else:
             #     print("normal: ", bytes(key, "unicode_escape"))
 
