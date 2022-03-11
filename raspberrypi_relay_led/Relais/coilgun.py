@@ -308,6 +308,15 @@ def fire():
             sleep(time_values[i + 1] / 1000)
 
 
+def bound_time(time):
+    if time > MAX_TIME_VALUE:
+        return MAX_TIME_VALUE
+    elif time < MIN_TIME_VALUE:
+        return MIN_TIME_VALUE
+    else:
+        return time
+
+
 def run_command():
     if command == "q" or command == "quit":
         exit()
@@ -355,15 +364,13 @@ while True:
         else:
             if key == KEY_UP:
                 time_values[control_arrows_pos_value] += 10**(-control_arrows_pos_digit + 2)
+                time_values[control_arrows_pos_value] = bound_time(time_values[control_arrows_pos_value])
 
-                if time_values[control_arrows_pos_value] > MAX_TIME_VALUE:
-                    time_values[control_arrows_pos_value] = MAX_TIME_VALUE
                 draw_value(control_arrows_pos_value)
             elif key == KEY_DOWN:
                 time_values[control_arrows_pos_value] -= 10**(-control_arrows_pos_digit + 2)
+                time_values[control_arrows_pos_value] = bound_time(time_values[control_arrows_pos_value])
 
-                if time_values[control_arrows_pos_value] < MIN_TIME_VALUE:
-                    time_values[control_arrows_pos_value] = MIN_TIME_VALUE
                 draw_value(control_arrows_pos_value)
             elif key == KEY_LEFT:
                 draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, False)
@@ -396,18 +403,16 @@ while True:
 
                 for i in range(control_arrows_pos_value % 2, COIL_NUM * 2 - 1, 2):
                     time_values[i] += val
+                    time_values[i] = bound_time(time_values[i])
 
-                    if time_values[i] > MAX_TIME_VALUE:
-                        time_values[i] = MAX_TIME_VALUE
                     draw_value(i)
             elif key == KEY_CTRL_DOWN:
                 val = 10**(-control_arrows_pos_digit + 2)
 
                 for i in range(control_arrows_pos_value % 2, COIL_NUM * 2 - 1, 2):
                     time_values[i] -= val
+                    time_values[i] = bound_time(time_values[i])
 
-                    if time_values[i] < MIN_TIME_VALUE:
-                        time_values[i] = MIN_TIME_VALUE
                     draw_value(i)
             elif key == KEY_CTRL_LEFT:
                 draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, False)
