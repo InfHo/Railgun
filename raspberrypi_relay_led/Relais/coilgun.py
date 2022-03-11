@@ -127,15 +127,15 @@ def set_mode(mode):
     return Exception("unsupported mode")
 
 
-def draw_titlebar(title):
+def draw_titlebar():
     set_cursor_pos(0, 0)
     set_mode("negative")
 
-    padding = (tty_width - len(title)) / 2
+    padding = (tty_width - len(TITLE)) / 2
     padding_left = int(padding)
     padding_rigth = padding_left if padding_left == padding else padding_left + 1
 
-    p(f"{' ' * padding_left}{title}{' ' * padding_rigth}")
+    p(f"{' ' * padding_left}{TITLE}{' ' * padding_rigth}")
 
     set_mode("normal")
 
@@ -255,7 +255,7 @@ def draw_control_arrows(i, j, visible):
 
 def draw_screen():
     update_tty_size()
-    draw_titlebar(TITLE)
+    draw_titlebar()
     draw_content()
 
     for i in range(COIL_NUM * 2 - 1):
