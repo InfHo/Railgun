@@ -329,10 +329,24 @@ while True:
                 control_arrows_pos_digit += 1
 
             draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, True)
-        # elif key == "\x8d":  # Ctrl+UP
-        #     print("CTRL+UP")
-        # elif key == "\x91":  # Ctrl+DOWN
-        #     print("Ctrl+DOWN")
+        elif key == "\x8d":  # Ctrl+UP
+            val = 10**(-control_arrows_pos_digit + 2)
+
+            for i in range(control_arrows_pos_value % 2, COIL_NUM * 2 - 1, 2):
+                time_values[i] += val
+
+                if time_values[i] > MAX_TIME_VALUE:
+                    time_values[i] = MAX_TIME_VALUE
+                draw_value(i)
+        elif key == "\x91":  # Ctrl+DOWN
+            val = 10**(-control_arrows_pos_digit + 2)
+
+            for i in range(control_arrows_pos_value % 2, COIL_NUM * 2 - 1, 2):
+                time_values[i] -= val
+
+                if time_values[i] < MIN_TIME_VALUE:
+                    time_values[i] = MIN_TIME_VALUE
+                draw_value(i)
         elif key == "s":  # Ctrl+LEFT
             draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, False)
 
