@@ -10,8 +10,22 @@ system("")  # make ANSI escape sequence get processed on windows
 
 ESC = "\x1b"
 
-CTRL_C_KEY = "\x03"
-SPECIAL_KEY = "\x00"
+KEY_SPECIAL = "\x00"
+
+KEY_CTRL_C = "\x03"
+KEY_BACKSPACE = "\x08"
+KEY_ENTER = "\r"
+
+KEY_UP = "H"
+KEY_DOWN = "P"
+KEY_LEFT = "K"
+KEY_RIGHT = "M"
+KEY_CTRL_UP = "\x8d"
+KEY_CTRL_DOWN = "\x91"
+KEY_CTRL_LEFT = "s"
+KEY_CTRL_RIGHT = "t"
+KEY_POS1 = "G"
+KEY_END = "O"
 
 LINE_H = "─"
 LINE_V = "│"
@@ -310,7 +324,7 @@ special_key_comming = False
 while True:
     key = getwch()
 
-    if key == SPECIAL_KEY:
+    if key == KEY_SPECIAL:
         special_key_comming = True
         continue
 
@@ -318,40 +332,40 @@ while True:
         special_key_comming = False
 
         if command_bar_active:
-            if key == "K":  # LEFT
+            if key == KEY_LEFT:
                 command_bar_cursor_pos += 1
 
                 if command_bar_cursor_pos > len(command):
                     command_bar_cursor_pos = len(command)
 
                 draw_command_bar()
-            elif key == "M":  # RIGHT
+            elif key == KEY_RIGHT:
                 command_bar_cursor_pos -= 1
 
                 if command_bar_cursor_pos < 0:
                     command_bar_cursor_pos = 0
 
                 draw_command_bar()
-            elif key == "G":  # POS1
+            elif key == KEY_POS1:
                 command_bar_cursor_pos = len(command)
                 draw_command_bar()
-            elif key == "O":  # END
+            elif key == KEY_END:
                 command_bar_cursor_pos = 0
                 draw_command_bar()
         else:
-            if key == "H":  # UP
+            if key == KEY_UP:
                 time_values[control_arrows_pos_value] += 10**(-control_arrows_pos_digit + 2)
 
                 if time_values[control_arrows_pos_value] > MAX_TIME_VALUE:
                     time_values[control_arrows_pos_value] = MAX_TIME_VALUE
                 draw_value(control_arrows_pos_value)
-            elif key == "P":  # DOWN
+            elif key == KEY_DOWN:
                 time_values[control_arrows_pos_value] -= 10**(-control_arrows_pos_digit + 2)
 
                 if time_values[control_arrows_pos_value] < MIN_TIME_VALUE:
                     time_values[control_arrows_pos_value] = MIN_TIME_VALUE
                 draw_value(control_arrows_pos_value)
-            elif key == "K":  # LEFT
+            elif key == KEY_LEFT:
                 draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, False)
 
                 if control_arrows_pos_digit == 0:
@@ -364,7 +378,7 @@ while True:
                     control_arrows_pos_digit -= 1
 
                 draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, True)
-            elif key == "M":  # RIGHT
+            elif key == KEY_RIGHT:
                 draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, False)
 
                 if control_arrows_pos_digit == TIME_VALUE_DIGITS:
@@ -377,7 +391,7 @@ while True:
                     control_arrows_pos_digit += 1
 
                 draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, True)
-            elif key == "\x8d":  # Ctrl+UP
+            elif key == KEY_CTRL_UP:
                 val = 10**(-control_arrows_pos_digit + 2)
 
                 for i in range(control_arrows_pos_value % 2, COIL_NUM * 2 - 1, 2):
@@ -386,7 +400,7 @@ while True:
                     if time_values[i] > MAX_TIME_VALUE:
                         time_values[i] = MAX_TIME_VALUE
                     draw_value(i)
-            elif key == "\x91":  # Ctrl+DOWN
+            elif key == KEY_CTRL_DOWN:
                 val = 10**(-control_arrows_pos_digit + 2)
 
                 for i in range(control_arrows_pos_value % 2, COIL_NUM * 2 - 1, 2):
@@ -395,7 +409,7 @@ while True:
                     if time_values[i] < MIN_TIME_VALUE:
                         time_values[i] = MIN_TIME_VALUE
                     draw_value(i)
-            elif key == "s":  # Ctrl+LEFT
+            elif key == KEY_CTRL_LEFT:
                 draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, False)
 
                 if control_arrows_pos_value == 0:
@@ -404,7 +418,7 @@ while True:
                     control_arrows_pos_value -= 1
 
                 draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, True)
-            elif key == "t":  # Ctrl+RIGHT
+            elif key == KEY_CTRL_RIGHT:
                 draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, False)
 
                 if control_arrows_pos_value == COIL_NUM * 2 - 2:
@@ -422,13 +436,13 @@ while True:
                 command_bar_active = False
                 command = ""
                 draw_command_bar()
-            elif key == "\x08":  # BACKSPACE
+            elif key == KEY_BACKSPACE:
                 if command_bar_cursor_pos == 0:
                     command = command[:-1]
                 else:
                     command = command[:-(command_bar_cursor_pos + 1)] + command[-command_bar_cursor_pos:]
                 draw_command_bar()
-            elif key == "\r":
+            elif key == KEY_ENTER:
                 run_command()
 
                 command = ""
@@ -441,7 +455,7 @@ while True:
                     command = command[:-command_bar_cursor_pos] + key + command[-command_bar_cursor_pos:]
                 draw_command_bar()
         else:
-            if key == "q" or key == CTRL_C_KEY:
+            if key == "q" or key == KEY_CTRL_C:
                 break
             elif key == "f":
                 fire()
