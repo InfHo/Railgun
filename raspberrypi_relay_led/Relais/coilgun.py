@@ -49,6 +49,10 @@ cursor_y_pos = 0
 control_arrows_pos_value = 0
 control_arrows_pos_digit = 0
 
+command = ""
+command_bar_active = False
+command_bar_cursor_pos = 0
+
 time_values = [0 for _ in range(COIL_NUM * 2 - 1)]
 
 
@@ -253,6 +257,21 @@ def draw_control_arrows(i, j, visible):
         p(ARROW_DOWN if visible else " ")
 
 
+def draw_command_bar():
+    set_cursor_visible(False)
+
+    set_cursor_pos(tty_height - 1, 0)
+
+    padding = (tty_width - 1 - len(command))
+
+    p(f":{command}{' ' * padding}")
+
+    set_cursor_x_pos(2 + len(command) - command_bar_cursor_pos)
+
+    if command_bar_active:
+        set_cursor_visible(True)
+
+
 def draw_screen():
     update_tty_size()
     draw_titlebar()
@@ -263,6 +282,8 @@ def draw_screen():
 
     draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, True)
 
+    draw_command_bar()
+
 
 def fire():
     for i in range(COIL_NUM):
@@ -271,6 +292,11 @@ def fire():
         # GPIO.output(coil_pins[i], GPIO.LOW)
         if i < COIL_NUM - 1:
             sleep(time_values[i + 1] / 1000)
+
+
+def run_command():
+    if command == "q" or command == "quit":
+        exit()
 
 
 set_cursor_visible(False)
@@ -291,89 +317,138 @@ while True:
     if special_key_comming:
         special_key_comming = False
 
-        if key == "H":  # UP
-            time_values[control_arrows_pos_value] += 10**(-control_arrows_pos_digit + 2)
+        if command_bar_active:
+            if key == "K":  # LEFT
+                command_bar_cursor_pos += 1
 
-            if time_values[control_arrows_pos_value] > MAX_TIME_VALUE:
-                time_values[control_arrows_pos_value] = MAX_TIME_VALUE
-            draw_value(control_arrows_pos_value)
-        elif key == "P":  # DOWN
-            time_values[control_arrows_pos_value] -= 10**(-control_arrows_pos_digit + 2)
+                if command_bar_cursor_pos > len(command):
+                    command_bar_cursor_pos = len(command)
 
-            if time_values[control_arrows_pos_value] < MIN_TIME_VALUE:
-                time_values[control_arrows_pos_value] = MIN_TIME_VALUE
-            draw_value(control_arrows_pos_value)
-        elif key == "K":  # LEFT
-            draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, False)
+                draw_command_bar()
+            elif key == "M":  # RIGHT
+                command_bar_cursor_pos -= 1
 
-            if control_arrows_pos_digit == 0:
+                if command_bar_cursor_pos < 0:
+                    command_bar_cursor_pos = 0
+
+                draw_command_bar()
+            elif key == "G":  # POS1
+                command_bar_cursor_pos = len(command)
+                draw_command_bar()
+            elif key == "O":  # END
+                command_bar_cursor_pos = 0
+                draw_command_bar()
+        else:
+            if key == "H":  # UP
+                time_values[control_arrows_pos_value] += 10**(-control_arrows_pos_digit + 2)
+
+                if time_values[control_arrows_pos_value] > MAX_TIME_VALUE:
+                    time_values[control_arrows_pos_value] = MAX_TIME_VALUE
+                draw_value(control_arrows_pos_value)
+            elif key == "P":  # DOWN
+                time_values[control_arrows_pos_value] -= 10**(-control_arrows_pos_digit + 2)
+
+                if time_values[control_arrows_pos_value] < MIN_TIME_VALUE:
+                    time_values[control_arrows_pos_value] = MIN_TIME_VALUE
+                draw_value(control_arrows_pos_value)
+            elif key == "K":  # LEFT
+                draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, False)
+
+                if control_arrows_pos_digit == 0:
+                    if control_arrows_pos_value == 0:
+                        control_arrows_pos_value = COIL_NUM * 2 - 2
+                    else:
+                        control_arrows_pos_value -= 1
+                    control_arrows_pos_digit = TIME_VALUE_DIGITS
+                else:
+                    control_arrows_pos_digit -= 1
+
+                draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, True)
+            elif key == "M":  # RIGHT
+                draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, False)
+
+                if control_arrows_pos_digit == TIME_VALUE_DIGITS:
+                    if control_arrows_pos_value == COIL_NUM * 2 - 2:
+                        control_arrows_pos_value = 0
+                    else:
+                        control_arrows_pos_value += 1
+                    control_arrows_pos_digit = 0
+                else:
+                    control_arrows_pos_digit += 1
+
+                draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, True)
+            elif key == "\x8d":  # Ctrl+UP
+                val = 10**(-control_arrows_pos_digit + 2)
+
+                for i in range(control_arrows_pos_value % 2, COIL_NUM * 2 - 1, 2):
+                    time_values[i] += val
+
+                    if time_values[i] > MAX_TIME_VALUE:
+                        time_values[i] = MAX_TIME_VALUE
+                    draw_value(i)
+            elif key == "\x91":  # Ctrl+DOWN
+                val = 10**(-control_arrows_pos_digit + 2)
+
+                for i in range(control_arrows_pos_value % 2, COIL_NUM * 2 - 1, 2):
+                    time_values[i] -= val
+
+                    if time_values[i] < MIN_TIME_VALUE:
+                        time_values[i] = MIN_TIME_VALUE
+                    draw_value(i)
+            elif key == "s":  # Ctrl+LEFT
+                draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, False)
+
                 if control_arrows_pos_value == 0:
                     control_arrows_pos_value = COIL_NUM * 2 - 2
                 else:
                     control_arrows_pos_value -= 1
-                control_arrows_pos_digit = TIME_VALUE_DIGITS
-            else:
-                control_arrows_pos_digit -= 1
 
-            draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, True)
-        elif key == "M":  # RIGHT
-            draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, False)
+                draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, True)
+            elif key == "t":  # Ctrl+RIGHT
+                draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, False)
 
-            if control_arrows_pos_digit == TIME_VALUE_DIGITS:
                 if control_arrows_pos_value == COIL_NUM * 2 - 2:
                     control_arrows_pos_value = 0
                 else:
                     control_arrows_pos_value += 1
-                control_arrows_pos_digit = 0
-            else:
-                control_arrows_pos_digit += 1
 
-            draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, True)
-        elif key == "\x8d":  # Ctrl+UP
-            val = 10**(-control_arrows_pos_digit + 2)
-
-            for i in range(control_arrows_pos_value % 2, COIL_NUM * 2 - 1, 2):
-                time_values[i] += val
-
-                if time_values[i] > MAX_TIME_VALUE:
-                    time_values[i] = MAX_TIME_VALUE
-                draw_value(i)
-        elif key == "\x91":  # Ctrl+DOWN
-            val = 10**(-control_arrows_pos_digit + 2)
-
-            for i in range(control_arrows_pos_value % 2, COIL_NUM * 2 - 1, 2):
-                time_values[i] -= val
-
-                if time_values[i] < MIN_TIME_VALUE:
-                    time_values[i] = MIN_TIME_VALUE
-                draw_value(i)
-        elif key == "s":  # Ctrl+LEFT
-            draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, False)
-
-            if control_arrows_pos_value == 0:
-                control_arrows_pos_value = COIL_NUM * 2 - 2
-            else:
-                control_arrows_pos_value -= 1
-
-            draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, True)
-        elif key == "t":  # Ctrl+RIGHT
-            draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, False)
-
-            if control_arrows_pos_value == COIL_NUM * 2 - 2:
-                control_arrows_pos_value = 0
-            else:
-                control_arrows_pos_value += 1
-
-            draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, True)
-        # else:
-        #     print(bytes(key, "unicode_escape"))
+                draw_control_arrows(control_arrows_pos_value, control_arrows_pos_digit, True)
+            # else:
+            #     print("special: ", bytes(key, "unicode_escape"))
 
     else:
-        # print(key)
+        if command_bar_active:
+            if key == ESC:
+                command_bar_active = False
+                command = ""
+                draw_command_bar()
+            elif key == "\x08":  # BACKSPACE
+                if command_bar_cursor_pos == 0:
+                    command = command[:-1]
+                else:
+                    command = command[:-(command_bar_cursor_pos + 1)] + command[-command_bar_cursor_pos:]
+                draw_command_bar()
+            elif key == "\r":
+                run_command()
 
-        if key == "q" or key == CTRL_C_KEY:
-            break
-        elif key == "f":
-            fire()
+                command = ""
+                command_bar_active = False
+                draw_command_bar()
+            else:
+                if command_bar_cursor_pos == 0:
+                    command += key
+                else:
+                    command = command[:-command_bar_cursor_pos] + key + command[-command_bar_cursor_pos:]
+                draw_command_bar()
+        else:
+            if key == "q" or key == CTRL_C_KEY:
+                break
+            elif key == "f":
+                fire()
+            elif key == ":":
+                command_bar_active = True
+                draw_command_bar()
+            # else:
+            #     print("normal: ", bytes(key, "unicode_escape"))
 
 set_cursor_pos(tty_height - 1, 0)
