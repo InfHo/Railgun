@@ -11,7 +11,7 @@ system("")  # make ANSI escape sequence get processed on windows
 
 ESC = "\x1b"
 
-KEY_SPECIAL = "\x00"
+KEYS_SPECIAL = ("\x00", "\xe0")
 
 KEY_CTRL_C = "\x03"
 KEY_BACKSPACE = "\x08"
@@ -404,7 +404,7 @@ special_key_comming = False
 while True:
     key = getwch()
 
-    if key == KEY_SPECIAL:
+    if key in KEYS_SPECIAL:
         special_key_comming = True
         continue
 
