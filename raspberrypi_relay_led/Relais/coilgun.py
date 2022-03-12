@@ -290,6 +290,7 @@ def draw_command_bar():
 
 
 def draw_screen():
+    clear()
     update_tty_size()
     draw_titlebar()
     draw_content()
@@ -325,8 +326,10 @@ def run_command():
 
     if command in ("q", "quit"):
         exit()
+
     elif command in ("f", "fire"):
         fire()
+
     elif command.startswith(("lp ", "load-profile ")):
 
         name = " ".join(command.split(" ")[1:])
@@ -559,6 +562,9 @@ while True:
 
             elif key == "f":
                 fire()
+
+            elif key == "r":
+                draw_screen()
 
             elif key == ":":
                 command_bar_active = True
