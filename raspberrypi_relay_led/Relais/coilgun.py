@@ -411,6 +411,19 @@ def run_command():
         else:
             return "Error - not a number"
 
+    elif command.startswith(("sa ", "set-all ")):
+        val = command.split(" ")[1]
+
+        if val.replace(".", "", 1).isdecimal():
+            val = bound_time(float(val))
+
+            for i in range(COIL_NUM * 2 - 1):
+                time_values[i] = val
+
+                draw_value(i)
+        else:
+            return "Error - not a number"
+
     elif command in ("r", "redraw"):
         draw_screen()
 
